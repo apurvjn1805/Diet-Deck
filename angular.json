@@ -17,6 +17,8 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
+            "outputPath": "dist/app",
+            "index": "projects/app/src/index.html",
             "browser": "projects/app/src/main.ts",
             "polyfills": [
               "zone.js"
