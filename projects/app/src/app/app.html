@@ -1,0 +1,166 @@
+<main class="page-shell">
+  <section class="hero-panel">
+    <div class="hero-copy">
+      <p class="eyebrow">🥗 Diet Deck</p>
+      <h1>Build a balanced weekly meal plan with confidence</h1>
+      <p>
+        Set your protein goal, pick fave foods, and build your plate - carbs,
+        sides, and "haan thoda rice bhi daalo" energy.
+      </p>
+    </div>
+  </section>
+
+  <section class="input-row">
+    <article class="mini-panel">
+      <p class="mini-label">YOUR WEIGHT</p>
+      <div class="weight-box">
+        <input
+          type="number"
+          min="30"
+          max="250"
+          step="1"
+          placeholder="75"
+          [(ngModel)]="weightInput"
+        />
+        <div class="unit-switch">
+          <button type="button" [class.active]="weightUnit === 'kg'" (click)="setWeightUnit('kg')">kg</button>
+          <button type="button" [class.active]="weightUnit === 'lbs'" (click)="setWeightUnit('lbs')">lbs</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="mini-panel">
+      <p class="mini-label">ACTIVITY LEVEL</p>
+      <div class="activity-grid">
+        @for (level of activityLevels; track level.id) {
+          <button
+            class="activity-card"
+            type="button"
+            [class.active]="activityId === level.id"
+            (click)="activityId = level.id"
+          >
+            <span class="activity-icon">{{ level.icon }}</span>
+            <span class="activity-title">{{ level.label }}</span>
+            <span class="activity-sub">{{ level.subtitle }}</span>
+          </button>
+        }
+      </div>
+    </article>
+  </section>
+
+  @if (proteinTarget(); as target) {
+    <section class="target-banner">
+      <p>🎯 Your daily protein target is <strong>{{ target }}g</strong></p>
+    </section>
+  }
+
+  <section class="source-head">
+    <h2>Pick Main Protein + Side Dish Ideas</h2>
+    <div class="filter-tabs">
+      <button type="button" [class.active]="sourceFilter === 'all'" (click)="sourceFilter = 'all'">All</button>
+      <button type="button" [class.active]="sourceFilter === 'veg'" (click)="sourceFilter = 'veg'">Veg</button>
+      <button type="button" [class.active]="sourceFilter === 'non-veg'" (click)="sourceFilter = 'non-veg'">
+        Non-Veg
+      </button>
+    </div>
+  </section>
+
+  <section class="source-grid">
+    @for (food of filteredSourceCards(); track food.id) {
+      <article class="source-card" [class.selected]="isSelected(food.id)" (click)="toggleCard(food.id)">
+        <p class="source-icon">{{ food.icon }}</p>
+        <h3>{{ food.name }}</h3>
+        <p class="source-protein">{{ food.protein }}g {{ food.perLabel }}</p>
+        <p class="source-macros">P {{ food.protein }} | C {{ food.carbs }} | F {{ food.fats }}</p>
+        @if (sourceAmountForProtein(food); as amount) {
+          <div class="source-target">{{ amount }} g needed</div>
+          <p class="source-target-note">to reach your daily protein target</p>
+        } @else {
+          <div class="source-target source-target-placeholder">Add weight first</div>
+        }
+        <p class="source-kcal">≈ {{ food.kcal }} kcal per 100g</p>
+      </article>
+    }
+  </section>
+
+  <section class="panel">
+    <div class="section-head">
+      <h2>Weekly Diet Chart 📅</h2>
+      <p>Assign your selected meals day-wise and generate a shareable chart.</p>
+    </div>
+
+    @if (selectedCards().length === 0) {
+      <p class="empty-state">Select at least one card to start planning your week.</p>
+    } @else {
+      <div class="week-grid">
+        @for (day of weeklyPlan; track day.day) {
+          <article class="day-card">
+            <h3>{{ day.day }}</h3>
+            <label [for]="day.day">Food card</label>
+            <select [id]="day.day" [(ngModel)]="day.foodId">
+              <option [ngValue]="null">Choose one</option>
+              @for (food of selectedCards(); track food.id) {
+                <option [value]="food.id">{{ food.name }}</option>
+              }
+            </select>
+
+            @if (selectedCardById(day.foodId); as activeFood) {
+              <div class="dish-list">
+                @for (dish of activeFood.dishIdeas; track dish) {
+                  <p>{{ dish }}</p>
+                }
+              </div>
+            } @else {
+              <p class="dish-placeholder">Dish ideas show here after selecting a card.</p>
+            }
+          </article>
+        }
+      </div>
+
+      <div class="chart-actions">
+        <button type="button" class="generate-chart-btn" [disabled]="!canGenerateChart()" (click)="openDietChartModal()">
+          Generate Diet Chart
+        </button>
+      </div>
+    }
+  </section>
+
+  <footer class="app-footer">Counted every gram, still said yes to dessert - Apurv</footer>
+</main>
+
+@if (isChartModalOpen) {
+  <div class="chart-modal-overlay" (click)="closeDietChartModal()">
+    <div class="chart-modal" #chartExportTarget (click)="$event.stopPropagation()">
+      <div class="chart-modal-head">
+        <h3>Weekly Diet Chart</h3>
+        <button type="button" class="close-btn" (click)="closeDietChartModal()">✕</button>
+      </div>
+
+      <div class="chart-table">
+        <div class="chart-row chart-row-head">
+          <span>Day</span>
+          <span>Food</span>
+          <span>Dish</span>
+          <span>Macros</span>
+        </div>
+        @for (entry of chartEntries; track entry.day) {
+          <div class="chart-row">
+            <span>{{ entry.day }}</span>
+            <span>{{ entry.food }}</span>
+            <span>{{ entry.dish }}</span>
+            <span>{{ entry.macros }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="chart-modal-actions no-export">
+        <button type="button" class="share-btn" (click)="shareDietChart()">Share</button>
+        <button type="button" class="download-btn" (click)="downloadDietChart()">Download</button>
+      </div>
+
+      @if (chartMessage) {
+        <p class="chart-message">{{ chartMessage }}</p>
+      }
+    </div>
+  </div>
+}
