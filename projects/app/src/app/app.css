@@ -549,3 +549,204 @@
     font-size: 0.76rem;
   }
 }
+
+/* Auth & Header Styles */
+.hero-copy {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.header-left {
+  flex: 1;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.btn-login-google {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: white;
+  border: 1px solid #dcdcdc;
+  border-radius: 4px;
+  color: #3c4043;
+  cursor: pointer;
+  font-family: var(--body-font);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.30), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.btn-login-google:hover {
+  background: #f8f9fa;
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.30), 0 1px 3px 1px rgba(60, 64, 67, 0.15), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: #fffefc;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1px solid #f0e5d8;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #f0e5d8;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #3f2a1f;
+}
+
+.btn-logout {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: #bc7335;
+  font-size: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.btn-logout:hover {
+  color: #a05a20;
+}
+
+/* AI Features Styles */
+.btn-ai-recipe {
+  margin-top: 0.8rem;
+  width: 100%;
+  border: 1px solid #d1915e;
+  background: white;
+  color: #674634;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-ai-recipe:hover {
+  background: #674634;
+  color: white;
+}
+
+.ai-suggestion-box {
+  margin-top: 1rem;
+  background: linear-gradient(135deg, #fdf8f4 0%, #fffdec 100%);
+  border: 1px dashed #bc7335;
+  border-radius: 0.8rem;
+  padding: 1rem;
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  animation: fadeIn 0.5s ease;
+}
+
+.ai-suggestion-text {
+  margin: 0 !important;
+  font-size: 0.95rem !important;
+  color: #5d4332 !important;
+  text-align: left !important;
+  line-height: 1.4 !important;
+}
+
+.ai-sparkle {
+  font-size: 1.5rem;
+}
+
+.recipe-modal {
+  max-width: 600px !important;
+}
+
+.recipe-content {
+  padding: 1rem 0;
+}
+
+.recipe-content h4 {
+  font-family: var(--heading-font);
+  font-size: 1.8rem;
+  color: #bc7335;
+  margin-bottom: 1rem;
+}
+
+.recipe-content h5 {
+  margin: 1.2rem 0 0.5rem;
+  font-size: 1.1rem;
+  color: #3f2a1f;
+}
+
+.recipe-content ul,
+.recipe-content ol {
+  padding-left: 1.2rem;
+  color: #5d4332;
+  font-size: 0.95rem;
+}
+
+.recipe-footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f0e5d8;
+  font-size: 0.9rem;
+}
+
+.ai-loading {
+  padding: 2rem;
+  text-align: center;
+}
+
+.shimmer-line {
+  height: 12px;
+  background: #f0e5d8;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f0e5d8 25%, #f8f1e9 50%, #f0e5d8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

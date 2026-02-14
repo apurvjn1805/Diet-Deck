@@ -1,6 +1,10 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, ViewChild, inject, signal, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { toPng } from 'html-to-image';
+import { SupabaseService } from './services/supabase.service';
+import { DataService, UserProfile } from './services/data.service';
+import { AiService } from './services/ai.service';
+import { AsyncPipe } from '@angular/common';
 
 type Nutrient = {
   icon: string;
@@ -44,12 +48,25 @@ type ChartEntry = {
 
 @Component({
   selector: 'app-root',
-  imports: [FormsModule],
+  imports: [FormsModule, AsyncPipe],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
 export class App {
   @ViewChild('chartExportTarget') private chartExportTarget?: ElementRef<HTMLElement>;
+
+  private supabase = inject(SupabaseService);
+  private dataService = inject(DataService);
+  private aiService = inject(AiService);
+
+  protected user$ = this.supabase.user$;
+  protected isLoadingProfile = signal(false);
+
+  // AI State
+  protected isAiLoading = signal(false);
+  protected aiRecipe = signal<any>(null);
+  protected aiSuggestion = signal<string>('');
+  protected isRecipeModalOpen = false;
 
   protected weightInput: number | null = null;
   protected weightUnit: 'kg' | 'lbs' = 'kg';
@@ -62,6 +79,95 @@ export class App {
     { id: 'active', label: 'Active', multiplier: 1.2, subtitle: 'Daily exercise', icon: '🏃' },
     { id: 'intense', label: 'Intense', multiplier: 1.6, subtitle: 'Heavy training', icon: '🏋️' }
   ];
+
+  constructor() {
+    // Automatically load profile when user logs in
+    effect(() => {
+      this.user$.subscribe(user => {
+        if (user) {
+          this.loadProfile();
+        }
+      });
+    });
+  }
+
+  async login() {
+    await this.supabase.signInWithGoogle();
+  }
+
+  async logout() {
+    await this.supabase.signOut();
+  }
+
+  async loadProfile() {
+    this.isLoadingProfile.set(true);
+    const profile = await this.dataService.getProfile();
+    if (profile) {
+      if (profile.weight) this.weightInput = profile.weight;
+      if (profile.food_preferences) {
+        this.selectedFoodIds = new Set(profile.food_preferences);
+      }
+    }
+    this.isLoadingProfile.set(false);
+  }
+
+  async saveProfile() {
+    try {
+      await this.dataService.updateProfile({
+        weight: this.weightInput,
+        food_preferences: Array.from(this.selectedFoodIds)
+      });
+      // After saving, refresh suggestions if logged in
+      this.fetchAiSuggestions();
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+    }
+  }
+
+  async getAiRecipe(food: FoodCard) {
+    this.isAiLoading.set(true);
+    this.isRecipeModalOpen = true;
+    try {
+      const recipe = await this.aiService.generateRecipe(food.name, this.proteinTarget() ?? 100);
+      this.aiRecipe.set(recipe);
+    } catch (error) {
+      console.error('Failed to get recipe:', error);
+    }
+    this.isAiLoading.set(false);
+  }
+
+  protected closeRecipeModal() {
+    this.isRecipeModalOpen = false;
+    this.aiRecipe.set(null);
+  }
+
+  async fetchAiSuggestions() {
+    const target = this.proteinTarget();
+    if (!target) return;
+
+    const currentProtein = this.calculateCurrentProtein();
+    const gap = target - currentProtein;
+
+    if (gap > 5) {
+      const planStr = this.weeklyPlan
+        .map(d => `${d.day}:${this.selectedCardById(d.foodId)?.name ?? 'None'}`)
+        .join(', ');
+
+      const suggestion = await this.aiService.getSmartSuggestions(planStr, gap);
+      this.aiSuggestion.set(suggestion || '');
+    } else {
+      this.aiSuggestion.set('');
+    }
+  }
+
+  private calculateCurrentProtein(): number {
+    // Basic average daily protein from current plan
+    const total = this.weeklyPlan.reduce((acc, day) => {
+      const food = this.selectedCardById(day.foodId);
+      return acc + (food ? food.protein : 0);
+    }, 0);
+    return Math.round(total / 7);
+  }
 
   protected readonly foodCards: FoodCard[] = [
     {
@@ -339,6 +445,7 @@ export class App {
     this.weightInput =
       unit === 'kg' ? Math.round(this.weightInput * 0.453592) : Math.round(this.weightInput * 2.20462);
     this.weightUnit = unit;
+    this.saveProfile();
   }
 
   protected filteredSourceCards(): FoodCard[] {
@@ -467,6 +574,7 @@ export class App {
     }
 
     this.selectedFoodIds.add(foodId);
+    this.saveProfile();
   }
 
   protected isSelected(foodId: string): boolean {

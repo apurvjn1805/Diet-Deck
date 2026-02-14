@@ -1,8 +1,41 @@
 <main class="page-shell">
   <section class="hero-panel">
     <div class="hero-copy">
-      <p class="eyebrow">🥗 Diet Deck</p>
-      <h1>Build a balanced weekly meal plan with confidence</h1>
+      <div class="header-left">
+        <h1 class="logo">Diet<span>Deck</span></h1>
+        <p class="tagline">Interactive Meal Planner & Nutrient Targeter</p>
+      </div>
+
+      <!-- Auth Section -->
+      <div class="header-right">
+        @if (user$ | async; as user) {
+        <div class="user-profile">
+          <img [src]="user.user_metadata['avatar_url']" [alt]="user.user_metadata['full_name']" class="avatar">
+          <div class="user-info">
+            <span class="user-name">{{ user.user_metadata['full_name'] }}</span>
+            <button (click)="logout()" class="btn-logout">Sign Out</button>
+          </div>
+        </div>
+        } @else {
+        <button (click)="login()" class="btn-login-google">
+          <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              fill="#4285F4" />
+            <path
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-1 .67-2.28 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              fill="#34A853" />
+            <path
+              d="M5.84 14.09c-.22-.67-.35-1.39-.35-2.09s.13-1.42.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+              fill="#FBBC05" />
+            <path
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              fill="#EA4335" />
+          </svg>
+          G-Log In
+        </button>
+        }
+      </div>
       <p>
         Set your protein goal, pick fave foods, and build your plate - carbs,
         sides, and "haan thoda rice bhi daalo" energy.
@@ -14,14 +47,8 @@
     <article class="mini-panel">
       <p class="mini-label">YOUR WEIGHT</p>
       <div class="weight-box">
-        <input
-          type="number"
-          min="30"
-          max="250"
-          step="1"
-          placeholder="75"
-          [(ngModel)]="weightInput"
-        />
+        <input type="number" min="30" max="250" step="1" placeholder="75" [(ngModel)]="weightInput"
+          (blur)="saveProfile()" />
         <div class="unit-switch">
           <button type="button" [class.active]="weightUnit === 'kg'" (click)="setWeightUnit('kg')">kg</button>
           <button type="button" [class.active]="weightUnit === 'lbs'" (click)="setWeightUnit('lbs')">lbs</button>
@@ -33,25 +60,28 @@
       <p class="mini-label">ACTIVITY LEVEL</p>
       <div class="activity-grid">
         @for (level of activityLevels; track level.id) {
-          <button
-            class="activity-card"
-            type="button"
-            [class.active]="activityId === level.id"
-            (click)="activityId = level.id"
-          >
-            <span class="activity-icon">{{ level.icon }}</span>
-            <span class="activity-title">{{ level.label }}</span>
-            <span class="activity-sub">{{ level.subtitle }}</span>
-          </button>
+        <button class="activity-card" type="button" [class.active]="activityId === level.id"
+          (click)="activityId = level.id">
+          <span class="activity-icon">{{ level.icon }}</span>
+          <span class="activity-title">{{ level.label }}</span>
+          <span class="activity-sub">{{ level.subtitle }}</span>
+        </button>
         }
       </div>
     </article>
   </section>
 
   @if (proteinTarget(); as target) {
-    <section class="target-banner">
-      <p>🎯 Your daily protein target is <strong>{{ target }}g</strong></p>
-    </section>
+  <section class="target-banner">
+    <p>🎯 Your daily protein target is <strong>{{ target }}g</strong></p>
+
+    @if (aiSuggestion()) {
+    <div class="ai-suggestion-box">
+      <span class="ai-sparkle">✨</span>
+      <p class="ai-suggestion-text">{{ aiSuggestion() }}</p>
+    </div>
+    }
+  </section>
   }
 
   <section class="source-head">
@@ -67,19 +97,22 @@
 
   <section class="source-grid">
     @for (food of filteredSourceCards(); track food.id) {
-      <article class="source-card" [class.selected]="isSelected(food.id)" (click)="toggleCard(food.id)">
-        <p class="source-icon">{{ food.icon }}</p>
-        <h3>{{ food.name }}</h3>
-        <p class="source-protein">{{ food.protein }}g {{ food.perLabel }}</p>
-        <p class="source-macros">P {{ food.protein }} | C {{ food.carbs }} | F {{ food.fats }}</p>
-        @if (sourceAmountForProtein(food); as amount) {
-          <div class="source-target">{{ amount }} g needed</div>
-          <p class="source-target-note">to reach your daily protein target</p>
-        } @else {
-          <div class="source-target source-target-placeholder">Add weight first</div>
-        }
-        <p class="source-kcal">≈ {{ food.kcal }} kcal per 100g</p>
-      </article>
+    <article class="source-card" [class.selected]="isSelected(food.id)" (click)="toggleCard(food.id)">
+      <p class="source-icon">{{ food.icon }}</p>
+      <h3>{{ food.name }}</h3>
+      <p class="source-protein">{{ food.protein }}g {{ food.perLabel }}</p>
+      <p class="source-macros">P {{ food.protein }} | C {{ food.carbs }} | F {{ food.fats }}</p>
+      @if (sourceAmountForProtein(food); as amount) {
+      <div class="source-target">{{ amount }} g needed</div>
+      <p class="source-target-note">to reach your daily protein target</p>
+      } @else {
+      <div class="source-target source-target-placeholder">Add weight first</div>
+      }
+      <p class="source-kcal">≈ {{ food.kcal }} kcal per 100g</p>
+      <button class="btn-ai-recipe" (click)="$event.stopPropagation(); getAiRecipe(food)">
+        ✨ Get AI Recipe
+      </button>
+    </article>
     }
   </section>
 
@@ -90,38 +123,38 @@
     </div>
 
     @if (selectedCards().length === 0) {
-      <p class="empty-state">Select at least one card to start planning your week.</p>
+    <p class="empty-state">Select at least one card to start planning your week.</p>
     } @else {
-      <div class="week-grid">
-        @for (day of weeklyPlan; track day.day) {
-          <article class="day-card">
-            <h3>{{ day.day }}</h3>
-            <label [for]="day.day">Food card</label>
-            <select [id]="day.day" [(ngModel)]="day.foodId">
-              <option [ngValue]="null">Choose one</option>
-              @for (food of selectedCards(); track food.id) {
-                <option [value]="food.id">{{ food.name }}</option>
-              }
-            </select>
+    <div class="week-grid">
+      @for (day of weeklyPlan; track day.day) {
+      <article class="day-card">
+        <h3>{{ day.day }}</h3>
+        <label [for]="day.day">Food card</label>
+        <select [id]="day.day" [(ngModel)]="day.foodId">
+          <option [ngValue]="null">Choose one</option>
+          @for (food of selectedCards(); track food.id) {
+          <option [value]="food.id">{{ food.name }}</option>
+          }
+        </select>
 
-            @if (selectedCardById(day.foodId); as activeFood) {
-              <div class="dish-list">
-                @for (dish of activeFood.dishIdeas; track dish) {
-                  <p>{{ dish }}</p>
-                }
-              </div>
-            } @else {
-              <p class="dish-placeholder">Dish ideas show here after selecting a card.</p>
-            }
-          </article>
+        @if (selectedCardById(day.foodId); as activeFood) {
+        <div class="dish-list">
+          @for (dish of activeFood.dishIdeas; track dish) {
+          <p>{{ dish }}</p>
+          }
+        </div>
+        } @else {
+        <p class="dish-placeholder">Dish ideas show here after selecting a card.</p>
         }
-      </div>
+      </article>
+      }
+    </div>
 
-      <div class="chart-actions">
-        <button type="button" class="generate-chart-btn" [disabled]="!canGenerateChart()" (click)="openDietChartModal()">
-          Generate Diet Chart
-        </button>
-      </div>
+    <div class="chart-actions">
+      <button type="button" class="generate-chart-btn" [disabled]="!canGenerateChart()" (click)="openDietChartModal()">
+        Generate Diet Chart
+      </button>
+    </div>
     }
   </section>
 
@@ -129,38 +162,81 @@
 </main>
 
 @if (isChartModalOpen) {
-  <div class="chart-modal-overlay" (click)="closeDietChartModal()">
-    <div class="chart-modal" #chartExportTarget (click)="$event.stopPropagation()">
-      <div class="chart-modal-head">
-        <h3>Weekly Diet Chart</h3>
-        <button type="button" class="close-btn" (click)="closeDietChartModal()">✕</button>
-      </div>
+<div class="chart-modal-overlay" (click)="closeDietChartModal()">
+  <div class="chart-modal" #chartExportTarget (click)="$event.stopPropagation()">
+    <div class="chart-modal-head">
+      <h3>Weekly Diet Chart</h3>
+      <button type="button" class="close-btn" (click)="closeDietChartModal()">✕</button>
+    </div>
 
-      <div class="chart-table">
-        <div class="chart-row chart-row-head">
-          <span>Day</span>
-          <span>Food</span>
-          <span>Dish</span>
-          <span>Macros</span>
-        </div>
-        @for (entry of chartEntries; track entry.day) {
-          <div class="chart-row">
-            <span>{{ entry.day }}</span>
-            <span>{{ entry.food }}</span>
-            <span>{{ entry.dish }}</span>
-            <span>{{ entry.macros }}</span>
-          </div>
-        }
+    <div class="chart-table">
+      <div class="chart-row chart-row-head">
+        <span>Day</span>
+        <span>Food</span>
+        <span>Dish</span>
+        <span>Macros</span>
       </div>
-
-      <div class="chart-modal-actions no-export">
-        <button type="button" class="share-btn" (click)="shareDietChart()">Share</button>
-        <button type="button" class="download-btn" (click)="downloadDietChart()">Download</button>
+      @for (entry of chartEntries; track entry.day) {
+      <div class="chart-row">
+        <span>{{ entry.day }}</span>
+        <span>{{ entry.food }}</span>
+        <span>{{ entry.dish }}</span>
+        <span>{{ entry.macros }}</span>
       </div>
-
-      @if (chartMessage) {
-        <p class="chart-message">{{ chartMessage }}</p>
       }
     </div>
+
+    <div class="chart-modal-actions no-export">
+      <button type="button" class="share-btn" (click)="shareDietChart()">Share</button>
+      <button type="button" class="download-btn" (click)="downloadDietChart()">Download</button>
+    </div>
+
+    @if (chartMessage) {
+    <p class="chart-message">{{ chartMessage }}</p>
+    }
   </div>
+</div>
+}
+
+<!-- AI Recipe Modal -->
+@if (isRecipeModalOpen) {
+<div class="chart-modal-overlay" (click)="closeRecipeModal()">
+  <div class="chart-modal recipe-modal" (click)="$event.stopPropagation()">
+    <div class="chart-modal-head">
+      <h3>✨ AI Recipe</h3>
+      <button type="button" class="close-btn" (click)="closeRecipeModal()">✕</button>
+    </div>
+
+    @if (isAiLoading()) {
+    <div class="ai-loading">
+      <div class="shimmer-line"></div>
+      <div class="shimmer-line"></div>
+      <div class="shimmer-line"></div>
+      <p>Gemini is crafting your recipe...</p>
+    </div>
+    } @else if (aiRecipe(); as recipe) {
+    <div class="recipe-content">
+      <h4>{{ recipe.recipeName }}</h4>
+
+      <h5>Ingredients</h5>
+      <ul>
+        @for (item of recipe.ingredients; track item) {
+        <li>{{ item }}</li>
+        }
+      </ul>
+
+      <h5>Instructions</h5>
+      <ol>
+        @for (step of recipe.instructions; track step) {
+        <li>{{ step }}</li>
+        }
+      </ol>
+
+      <div class="recipe-footer">
+        <p><strong>Macros:</strong> {{ recipe.nutritionalValue }}</p>
+      </div>
+    </div>
+    }
+  </div>
+</div>
 }
